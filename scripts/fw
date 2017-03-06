@@ -8,8 +8,6 @@ IF_PROD="eno1";
 IF_EXT="enp0s20u1";
 NULL_IP="0.0.0.0";
 
-TARGET_SSH="127.0.0.1";
-
 ##### Fonctions
 
 function open_out_tcp_strict () {
@@ -18,6 +16,14 @@ function open_out_tcp_strict () {
 
     iptables -t filter -A INPUT  -i $1 -s $3 -d $2 \
     -p tcp --sport $4 -m conntrack --ctstate     RELATED,ESTABLISHED -j ACCEPT;
+}
+
+function open_out_udp_strict () {
+    iptables -t filter -A OUTPUT -o $1 -s $2 -d $3   \
+    -p udp --dport $4 -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j ACCEPT;
+
+    iptables -t filter -A INPUT  -i $1 -s $3 -d $2 \
+    -p udp --sport $4 -m conntrack --ctstate     RELATED,ESTABLISHED -j ACCEPT;
 }
 
 function open_out_tcp_any () {
@@ -40,6 +46,9 @@ function get_dns () {
     cat /etc/resolv.conf | grep nameserver | awk '{print $2}';
 }
 
+function resolv () {
+    (nslookup "$1" | grep -A1 "Name:" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | tr '\n' ',') 2> /dev/null;
+}
 
 MY_IP_EXT=`get_ip $IF_EXT`;
 MY_IP_PROD=`get_ip $IF_PROD`;
@@ -89,12 +98,32 @@ iptables -t filter -A INPUT  -i $IF_PROD -d $MY_IP_PROD \
 -p icmp --icmp-type echo-reply -j LOG_ACCEPT;
 
 # Ports habituels sur le web
-for tcp_port in 143 587 443 80; do
+for tcp_port in 443 80; do
     open_out_tcp_any $IF_PROD $MY_IP_PROD $tcp_port;
 done;
 
-# Ports spécifique à une cible
-open_out_tcp_strict $IF_PROD $MY_IP_PROD $TARGET_SSH ssh;
+# Open myfirm special ports if needed
+if [[ "$( (nslookup $dns | grep name | awk '{print $4}') 2> /dev/null)" == "ns2.myfirm.eu." ]]; then
+    _smtp=$(resolv smtp.myfirm.eu);
+    _imap=$(resolv imap.myfirm.eu);
+    _xmpp=$(resolv xmpp.myfirm.eu);
+    open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_smtp:0:-1} 25;   # smtp interne
+    open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_imap:0:-1} 143;  # imap
+    open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_xmpp:0:-1} 5222; # imap
+
+    _f1=$(resolv filer1.myfirm.eu);
+    _f2=$(resolv filer2.myfirm.eu);
+    open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_f1}${_f2:0:-1} 445; # tcp smb
+    open_out_udp_strict $IF_PROD $MY_IP_PROD ${_f1}${_f2:0:-1} 445; # udp smb
+
+fi
+
+# Open external usage
+open_out_tcp_strict $IF_PROD $MY_IP_PROD 192.30.252.0/22 ssh; #github
+
+_off365=$(resolv outlook.office365.com); ##### Office365 IMAP, SMTP
+open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_off365:0:-1} 587;
+open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_off365:0:-1} 143;
 
 # Brouillage
 iptables -t filter -A INPUT -p tcp -j TARPIT;
