@@ -5,7 +5,7 @@ set -x
 ##### Définition des variables
 
 IF_PROD="eno1";
-IF_EXT="enp0s20u1";
+IF_EXT="enp0s20u2";
 NULL_IP="0.0.0.0";
 
 ##### Fonctions
