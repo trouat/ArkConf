@@ -1,0 +1,120 @@
+#! /bin/bash
+#
+#   Création : TRT 05/10/2015
+#   Modif    : TRT 04/07/2016
+#
+# Intall : 
+# cp mkLUKE /usr/local/sbin;
+# cd /usr/local/sbin;
+# chown root:root mkLUKE;
+# chmod +x mkLUKE;
+# ln -s mkLUKE mnt; ln -s mkLUKE umnt;
+
+MY_HOME="/home/trouat";
+DEF_DIR="/home/vol";
+
+function install {
+    if ! $(which mkLUKE > /dev/null); then
+        cp mkLUKE /usr/local/sbin;
+        cd /usr/local/sbin;
+        chown root:root mkLUKE;
+        ln -s mkLUKE mnt; ln -s mkLUKE umnt;
+    else
+        echo "Déjà fait !";
+    fi;
+    echo "Add the following line into /etc/sudoers: %users ALL=NOPASSWD: /usr/local/sbin/mnt, /usr/local/sbin/umnt";
+}
+
+function usage {
+    if [[ $(basename $0) == "mkLUKE" ]]; then
+        echo "./$(basename $0) install";
+        echo "$(basename $0) <file> <size>";
+        echo "   → size: 1G, 1M, 1K, or number in byte 1024";
+    else
+        echo "$(basename $0) <file>";
+        echo "   → (u)mount file as LUKS container";
+    fi;
+}
+
+function mnt {
+    #[ -f "$1" ] || ( [ -f ${DEF_DIR}/"$1" ] && __defdir=${DEF_DIR}/ )
+    __myloop=$(losetup -f);
+    losetup ${__myloop} "${__def_dir}$1";
+    cryptsetup luksOpen ${__myloop} "$1";
+    mkdir ${MY_HOME}/"$1";
+    mount /dev/mapper/"$1" ${MY_HOME}/"$1";
+    #chmod o+w ${MY_HOME}/"$1";
+}
+
+function umnt {
+    __myloop=$(losetup -l | grep "$1" | awk '{print $1}');
+    umount ${MY_HOME}/"$1";
+    rmdir ${MY_HOME}/"$1";
+    cryptsetup luksClose /dev/mapper/"$1";
+    losetup -d ${__myloop};
+}
+
+function mkLUKE {
+	__myloop=$(losetup -f);
+	echo ${__myloop}
+	PS3="FS type you want: ";
+	fallocate -l $2 "$1";
+	losetup ${__myloop} "$1";
+	cryptsetup luksFormat ${__myloop}
+	cryptsetup luksOpen ${__myloop} $(basename "$1");
+	select __fs in $(ls /sbin/mkfs.* | awk -F\. '{print $2}')
+	do
+		echo ${__fs};
+		break;
+	done;
+	eval mkfs.${__fs} /dev/mapper/$(basename "$1");
+	cryptsetup luksClose /dev/mapper/$(basename "$1");
+	losetup -d ${__myloop};
+}
+
+## main
+
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    usage;
+    exit 1;
+fi;
+
+case $(basename "$0") in
+    "mnt")
+        cd ${DEF_DIR};
+        if [ ! -f "$1" ]; then
+            usage;
+            exit 2;
+        fi;
+        cd $(dirname "$1");
+        mnt $(basename "$1");
+        ;;
+    "umnt")
+        if ! grep /dev/mapper/$(basename "$1") /etc/mtab; then
+            usage;
+            exit 3;
+        fi;
+        umnt $(basename "$1");
+        ;;
+    "mkLUKE")
+        if  [ "$#" -eq 1 ] && [[ "$1" == "install" ]] ; then
+            install;
+        fi;
+        if [ "$#" -ne 2 ]; then
+            usage;
+            exit 4;
+        fi;
+        if grep /dev/mapper/$(basename "$1") /etc/mtab; then
+            echo id $(basename "$1") already in use
+	    usage;
+	    exit 5;
+	fi;
+	mkLUKE "$1" "$2";
+	;;
+    *)
+        echo "$0 not implemented";
+        exit 6;
+        ;;
+esac;
+
+exit 0;

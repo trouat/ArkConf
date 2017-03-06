@@ -1,0 +1,25 @@
+#! /bin/bash
+
+ETH='eno1';
+
+function reload {
+    killall dhcpcd;
+    sleep 2;
+    rm /var/lib/dhcpcd/dhcpcd-*;
+    macchanger -e ${ETH};
+    dhcpcd ${ETH};
+}
+
+case $1 in
+    "-k")
+        killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; macchanger -p ${ETH}; sleep 2; dhcpcd ${ETH};
+        fw;
+        ;;
+    "-r")
+        while true; do reload; fw; sleep 7200; done;
+        ;;
+    *)
+        echo "Usage: -r (reload) | -k (kill)";
+        ;;
+esac
+
