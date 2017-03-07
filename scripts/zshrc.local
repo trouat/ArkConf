@@ -1,0 +1,47 @@
+alias srm='srm -vv'
+alias ls='ls --color=auto'
+alias shred='shred -v -n 1 -u'
+alias reload_ip='sudo reload_ip'
+
+alias clip='xclip -selection clipboard';
+alias clop='xclip -o -selection clipboard';
+
+function crypt {
+    clop | gpg -sea -r $1 | clip;
+}
+
+function umnt {
+    if [[ "$1" == "-a" ]];
+    then
+        for loop in $( losetup -a | awk '{print $3}' | sed 's/(//;s/)//' )
+        do
+            sudo umnt $(basename "$loop")
+        done
+    else
+        for value in $@;
+        do
+            echo "- $value";
+            sudo umnt "$value";
+        done;
+    fi
+}
+
+function mnt {
+    if [ "$#" -lt 1 ]; 
+    then
+        echo "Illegal number of parameters";
+    elif [ "$#" -eq 1 ];
+    then
+        sudo mnt "$1";
+    else
+        echo -n "Password:";
+        read -s pass; echo;
+        for value in $@;
+        do
+            echo "+ $value";
+            sudo mnt "$value" <<< $pass;
+        done;
+    fi
+}
+
+setopt HIST_IGNORE_SPACE
