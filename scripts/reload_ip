@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ETH='eno1'; #Default inet
+ETH='eno1';
 
 function reload {
     killall dhcpcd;
@@ -23,7 +23,7 @@ case "$1" in
         fw ${ETH};
         ;;
     "-r")
-        while true; do reload; fw; sleep 7200; done;
+        while true; do reload; fw ${ETH}; sleep 7200; done;
         ;;
     "-i")
         killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd "$2"; fw ${ETH}; 
