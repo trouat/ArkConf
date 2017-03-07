@@ -2,6 +2,7 @@
 #
 #   Création : TRT 05/10/2015
 #   Modif    : TRT 04/07/2016
+#   Modif    : TRT 07/03/2017
 #
 # Intall : 
 # cp mkLUKE /usr/local/sbin;
@@ -10,8 +11,13 @@
 # chmod +x mkLUKE;
 # ln -s mkLUKE mnt; ln -s mkLUKE umnt;
 
-MY_HOME="/home/trouat";
-DEF_DIR="/home/vol";
+##############################################
+# If $HOME is keeped in /etc/sudoers, 
+# you can use the commented section…
+##############################################
+MY_HOME="/home/trouat"; # MY_HOME=$HOME
+DEF_DIR="/home/vol";    # DEF_DIR=$HOME/vol
+##############################################
 
 function install {
     if ! $(which mkLUKE > /dev/null); then
@@ -22,7 +28,10 @@ function install {
     else
         echo "Déjà fait !";
     fi;
-    echo "Add the following line into /etc/sudoers: %users ALL=NOPASSWD: /usr/local/sbin/mnt, /usr/local/sbin/umnt";
+    echo "Add the following line into /etc/sudoers: ";
+    echo "   Defaults!/usr/local/sbin/umnt env_keep += \"HOME\"";
+    echo "   Defaults!/usr/local/sbin/mnt  env_keep += \"HOME\"";
+    echo "   %users ALL=NOPASSWD: /usr/local/sbin/mnt, /usr/local/sbin/umnt";
 }
 
 function usage {
