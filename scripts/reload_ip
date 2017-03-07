@@ -4,6 +4,11 @@ ETH='eno1';
 
 function reload {
     killall dhcpcd;
+    
+    for addr in `ip addr show dev ${ETH}  | grep inet | awk '{print $2}'`; do
+        ip addr delete "$addr" dev ${ETH};
+    done;
+
     sleep 2;
     rm /var/lib/dhcpcd/dhcpcd-*;
     macchanger -e ${ETH};
