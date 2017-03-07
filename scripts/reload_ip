@@ -11,7 +11,9 @@ function reload {
 }
 
 function usage {
-    echo "Usage: -r [inet] (reload) | -k [inet] (kill) | -i [inet] (interface)";
+    echo "Usage: -r [inet] (reload ip/mac any 2 hours)";
+    echo "       -k [inet] (kill every task, reset to default)";
+    echo "       -i [inet] (interface, no reset hw mac addr)";
 }
 
 
@@ -26,7 +28,7 @@ case "$1" in
         while true; do reload; fw ${ETH}; sleep 7200; done;
         ;;
     "-i")
-        killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd "$2"; fw ${ETH}; 
+        killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd ${ETH}; fw ${ETH}; 
         ;;
     *)
         usage;
