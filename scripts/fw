@@ -36,8 +36,10 @@ function open_out_tcp_any () {
 }
 
 function get_ip () {
-    if ip link show $1 > /dev/null 2>&1; then
-        ip addr show $1 | grep "inet " | sed 's+.*inet \(.*\)/.*+\1+';
+    if [ -d /sys/class/net/"$1" ]; then
+        _ret=`ip -4 -o addr show "$1" | sed 's+.*inet \(.*\)/.*+\1+'`;
+        [[ "${_ret}" == "" ]] && _ret=$NULL_IP;
+        echo ${_ret};
     else
         echo $NULL_IP;
     fi
