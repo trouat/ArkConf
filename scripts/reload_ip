@@ -1,6 +1,6 @@
 #! /bin/bash
 
-ETH='eno1';
+ETH='eno1'; #Default inet
 
 function reload {
     killall dhcpcd;
@@ -10,16 +10,26 @@ function reload {
     dhcpcd ${ETH};
 }
 
-case $1 in
+function usage {
+    echo "Usage: -r [inet] (reload) | -k [inet] (kill) | -i [inet] (interface)";
+}
+
+
+(ip link show "$2" > /dev/null 2>&1) && ETH="$2";
+
+case "$1" in
     "-k")
         killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; macchanger -p ${ETH}; sleep 2; dhcpcd ${ETH};
-        fw;
+        fw ${ETH};
         ;;
     "-r")
         while true; do reload; fw; sleep 7200; done;
         ;;
+    "-i")
+        killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd "$2"; fw ${ETH}; 
+        ;;
     *)
-        echo "Usage: -r (reload) | -k (kill)";
+        usage;
         ;;
 esac
 

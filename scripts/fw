@@ -6,6 +6,7 @@ set -x
 
 IF_PROD="eno1";
 IF_EXT="enp0s20u2";
+IF_WLAN="wlp2s0";
 NULL_IP="0.0.0.0";
 
 ##### Fonctions
@@ -35,7 +36,7 @@ function open_out_tcp_any () {
 }
 
 function get_ip () {
-    if ip link show $1 > /dev/null; then
+    if ip link show $1 > /dev/null 2>&1; then
         ip addr show $1 | grep "inet " | sed 's+.*inet \(.*\)/.*+\1+';
     else
         echo $NULL_IP;
@@ -52,8 +53,17 @@ function resolv () {
 
 MY_IP_EXT=`get_ip $IF_EXT`;
 MY_IP_PROD=`get_ip $IF_PROD`;
+MY_IP_WLAN=`get_ip $IF_WLAN`;
 
-[[ "$MY_IP_EXT" != "$NULL_IP" ]] && MY_IP_PROD=$MY_IP_EXT && IF_PROD=$IF_EXT;
+if ( ip link show "$1" > /dev/null 2>&1 ); then # si inet en argument
+    MY_IP_PROD=`get_ip "$1"` && IF_PROD="$1";
+
+elif [[ "$MY_IP_EXT" != "$NULL_IP" ]]; then     # sinon si utilisation connexion téléphone
+    MY_IP_PROD=$MY_IP_EXT && IF_PROD=$IF_EXT;
+
+elif [[ "$MY_IP_WLAN" != "$NULL_IP" ]]; then    # sinon si utilisation connexion WiFi
+    MY_IP_PROD=$MY_IP_WLAN && IF_PROD=$IF_WLAN;
+fi
 
 ##### Nettoyage des règles existantes
 iptables -F; # Flush (supression des règles)
