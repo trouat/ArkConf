@@ -85,9 +85,11 @@ iptables -N LOG_DROP;
 iptables -A LOG_DROP -j LOG --log-prefix '[IPTABLES DROP]: ';
 iptables -A LOG_DROP -j DROP;
 
-# Éventuellement : protection contre le scan de port
-# Remplacer la règle ci-dessus par :
-# iptables -A LOG_DROP -j TARPIT;
+# Éventuellement : journaliser protection contre le scan de port
+iptables -N LOG_TARPIT;
+iptables -A LOG_TARPIT -p tcp -j LOG --log-prefix '[IPTABLES TARPIT]: ';
+iptables -A LOG_TARPIT -p tcp -j TARPIT;
+iptbales -A LOG_TARPIT -j LOG_DROP;
 
 # Journaliser certaines choses qu'on accepte
 iptables -N LOG_ACCEPT;
@@ -114,6 +116,11 @@ for tcp_port in 443 80; do
     open_out_tcp_any $IF_PROD $MY_IP_PROD $tcp_port;
 done;
 
+# Local ports
+open_out_tcp_strict lo 127.0.0.1 127.0.0.1 39725    #GoogleTalk
+open_out_tcp_strict lo 127.0.0.1 127.0.0.1 53927    #GoogleTalk
+open_out_tcp_strict lo 127.0.0.1 127.0.0.1 631      #CUPS
+
 # Open myfirm special ports if needed
 if [[ "$( (nslookup $dns | grep name | awk '{print $4}') 2> /dev/null)" == "ns2.myfirm.eu." ]]; then
     _smtp=$(resolv smtp.myfirm.eu);
@@ -128,6 +135,18 @@ if [[ "$( (nslookup $dns | grep name | awk '{print $4}') 2> /dev/null)" == "ns2.
     open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_f1}${_f2:0:-1} 445; # tcp smb
     open_out_udp_strict $IF_PROD $MY_IP_PROD ${_f1}${_f2:0:-1} 445; # udp smb
 
+    ### printers ###
+    _printers="192.168.123.123,192.168.234.234";
+
+    #### Contact printer → mDNS
+    iptables -t filter -A OUTPUT -o $IF_PROD -s $MY_IP_PROD -d 224.0.0.251 \
+        -p udp --dport 5353 --sport 5353 -j ACCEPT;
+    iptables -t filter -A INPUT  -i $IF_PROD -s $_printers -d 224.0.0.251 \
+        -p udp --dport 5353 --sport 5353 -j ACCEPT;
+
+    #### File Transfert
+    open_out_tcp_strict $IF_PROD $MY_IP_PROD $_printers 9100;
+
 fi
 
 # Open external usage
@@ -137,5 +156,7 @@ _off365=$(resolv outlook.office365.com); ##### Office365 IMAP, SMTP
 open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_off365:0:-1} 587;
 open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_off365:0:-1} 143;
 
-# Brouillage
-iptables -t filter -A INPUT -p tcp -j TARPIT;
+# LogNdrop
+iptables -t filter -A INPUT -i $IF_PROD -j LOG_TARPIT;
+iptables -t filter -A INPUT  -j LOG_DROP;
+iptables -t filter -A OUTPUT -j LOG_DROP;
