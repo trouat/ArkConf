@@ -15,24 +15,33 @@ function usage {
     echo "Usage: -r [inet] (reload ip/mac any 2 hours)";
     echo "       -k [inet] (kill every task, reset to default)";
     echo "       -i [inet] (interface, no reset hw mac addr)";
+    echo "       -f (force)."
 }
 
 
 (ip link show "$2" > /dev/null 2>&1) && ETH="$2";
 
-case "$1" in
-    "-k")
-        killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; macchanger -p ${ETH}; sleep 2; dhcpcd ${ETH};
-        fw ${ETH};
-        ;;
-    "-r")
-        while true; do reload; fw ${ETH}; sleep 7200; done;
-        ;;
-    "-i")
-        killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd ${ETH}; fw ${ETH}; 
-        ;;
-    *)
-        usage;
-        ;;
-esac
-
+while : ; do
+    case "$1" in
+        "-k")
+            killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; macchanger -p ${ETH}; 
+            sleep 2; dhcpcd ${ETH};
+            fw ${ETH};
+            ;;
+        "-f")
+            echo "" > /etc/resolv.conf; ip link set ${ETH} down;
+            ;;
+        "-r")
+            while true; do reload; fw ${ETH}; sleep 7200; done;
+            ;;
+        "-i")
+            killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd ${ETH}; fw ${ETH}; 
+            ;;
+        *)
+            usage;
+            exit 1;
+            ;;
+    esac;
+    shift;
+    [[ "$1" != "" ]] || break;
+done;
