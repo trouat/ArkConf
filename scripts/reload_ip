@@ -1,14 +1,15 @@
 #! /bin/bash
 
-ETH='eno1';
-
+ETH='eno1';                          # Default inet
+DHC='dhcpcd';                        # DHCP client
+DHC_LEASE='/var/lib/dhcpcd/dhcpcd-'; # DHCP client lease
 function reload {
-    killall dhcpcd;
+    killall ${DHC};
     ip addr flush dev ${ETH};
     sleep 2;
-    rm /var/lib/dhcpcd/dhcpcd-*;
+    rm ${DHC_LEASE}*;
     macchanger -e ${ETH};
-    dhcpcd ${ETH};
+    ${DHC} ${ETH};
 }
 
 function usage {
@@ -24,8 +25,8 @@ function usage {
 while : ; do
     case "$1" in
         "-k")
-            killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; macchanger -p ${ETH}; 
-            sleep 2; dhcpcd ${ETH};
+            killall ${DHC}; rm ${DHC_LEASE}*; macchanger -p ${ETH}; 
+            sleep 2; ${DHC} ${ETH};
             fw ${ETH};
             ;;
         "-f")
@@ -35,7 +36,7 @@ while : ; do
             while true; do reload; fw ${ETH}; sleep 7200; done;
             ;;
         "-i")
-            killall dhcpcd; rm /var/lib/dhcpcd/dhcpcd-*; sleep 2; dhcpcd ${ETH}; fw ${ETH}; 
+            killall ${DHC}; rm ${DHC_LEASE}*; sleep 2; ${DHC} ${ETH}; fw ${ETH}; 
             ;;
         *)
             usage;
