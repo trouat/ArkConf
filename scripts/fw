@@ -170,6 +170,14 @@ open_out_tcp_strict $IF_PROD $MY_IP_PROD ${_off365:0:-1} 143;
 iptables -t filter -A INPUT -m pkttype --pkt-type broadcast -j DROP;
 iptables -t filter -A INPUT -d 224.0.0.251 -p udp --dport 5353 --sport 5353 -j DROP;
 
+# Log N Tarpit
+iptables -t filter -A INPUT -i $IF_PROD -p tcp -j LOG_TARPIT; 
+## raw, SYN+ACK, win 5/lenght 0
+iptables -t filter -A OUTPUT -o $IF_PROD -p tcp --tcp-flags ALL SYN,ACK \
+    -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT;
+iptables -t filter -A OUTPUT -o $IF_PROD -p tcp --tcp-flags ALL ACK \
+    -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT;
+
 # LogNdrop
 iptables -t filter -A INPUT -i $IF_PROD -j LOG_TARPIT;
 iptables -t filter -A INPUT  -j LOG_DROP;
