@@ -1,48 +1,60 @@
 #! /bin/bash
-
-ETH='eno1';                          # Default inet
+set -x
+ETH='eno1X';                          # Default inet
 DHC='dhcpcd';                        # DHCP client
 DHC_LEASE='/var/lib/dhcpcd/dhcpcd-'; # DHCP client lease
 function reload {
     killall ${DHC};
-    ip addr flush dev ${ETH};
+    ip addr flush dev ${_eth};
     sleep 2;
     rm ${DHC_LEASE}*;
-    macchanger -e ${ETH};
-    ${DHC} ${ETH};
+    macchanger -e ${_eth};
+    ${DHC} ${_eth};
 }
 
 function usage {
+    echo "$@ → Illegal parameter!"
     echo "Usage: -r [inet] (reload ip/mac any 2 hours)";
     echo "       -k [inet] (kill every task, reset to default)";
     echo "       -i [inet] (interface, no reset hw mac addr)";
-    echo "       -f (force)."
+    echo "       -f (force)"
+}
+
+function link {
+    (ip link show "$1" > /dev/null 2>&1) && (echo -ne "$1") || (echo -ne "$ETH");
 }
 
 
-(ip link show "$2" > /dev/null 2>&1) && ETH="$2";
+#(ip link show "$2" > /dev/null 2>&1) && ETH="$2";
+
+_arg=1;
+_eth=$ETH;
 
 while : ; do
     case "$1" in
         "-k")
-            killall ${DHC}; rm ${DHC_LEASE}*; macchanger -p ${ETH}; 
-            sleep 2; ${DHC} ${ETH};
-            fw ${ETH};
+            _eth=$(link "$2");
+            killall ${DHC}; rm ${DHC_LEASE}*; macchanger -p ${_eth}; 
+            sleep 2; ${DHC} ${_eth};
+            fw ${_eth};
             ;;
         "-f")
-            echo "" > /etc/resolv.conf; ip link set ${ETH} down;
+            _eth=$(link "${!#}");
+            echo "" > /etc/resolv.conf; ip link set ${_eth} down;
             ;;
         "-r")
-            while true; do reload; fw ${ETH}; sleep 7200; done;
+            _eth=$(link "$2");
+            while true; do reload; fw ${_eth}; sleep 7200; done;
             ;;
         "-i")
-            killall ${DHC}; rm ${DHC_LEASE}*; sleep 2; ${DHC} ${ETH}; fw ${ETH}; 
+            _eth=$(link "$2");
+            killall ${DHC}; rm ${DHC_LEASE}*; sleep 2; ${DHC} ${_eth}; fw ${_eth}; 
             ;;
         *)
-            usage;
+            usage $@;
             exit 1;
             ;;
     esac;
-    shift;
-    [[ "$1" != "" ]] || break;
+    shift; [[ "$1" == "$_eth" ]] && shift;
+    [[ "$1" != "" ]] ||  break;
 done;
