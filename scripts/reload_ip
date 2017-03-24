@@ -1,6 +1,6 @@
 #! /bin/bash
 set -x
-ETH='eno1X';                          # Default inet
+ETH='eno1';                          # Default inet
 DHC='dhcpcd';                        # DHCP client
 DHC_LEASE='/var/lib/dhcpcd/dhcpcd-'; # DHCP client lease
 function reload {
