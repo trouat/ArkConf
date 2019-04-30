@@ -7,7 +7,7 @@
 
 function delay {
     sleep $2;
-    $1 &
+    eval "$1" &
 }
 
 function rdombg {
@@ -17,15 +17,24 @@ function rdombg {
     done;
 }
 
-# Change your keymap:
-xmodmap "/home/trouat/.Xmodmap"
-setxkbmap fr oss;
+function vbox {
+    for feature in --clipboard --draganddrop --seamless --display --checkhostversion;
+    do
+        VBoxClient ${feature}
+    done;
+}
 
-# composite
+# Change your keymap:
+xmodmap "~/.Xmodmap"
+setxkbmap fr oss;
+xrdb -merge ~/.Xresources
+
+## composite
 #delay "xcompmgr -c -C -t-5 -l-5 -r4.2 -o.55" 5 &
-delay "compton -c -r4 -l-6 -t-4 -z -b -G -C -e0.85 -f -D30 -I0.45 -O0.45 --paint-on-overlay --unredir-if-possible --backend glx --glx-no-stencil --glx-no-rebind-pixmap" 5 &
-# témoin de charge
-delay "cbatticon" 6 &
+#delay "compton -c -r4 -l-6 -t-4 -z -b -G -C -e0.85 -f -D30 -I0.45 -O0.45 --paint-on-overlay --unredir-if-possible --backend glx --glx-no-stencil --glx-no-rebind-pixmap" 5 &
+
+## témoin de charge
+#delay "cbatticon" 6 &
 
 #delay rdombg 6 &
 
