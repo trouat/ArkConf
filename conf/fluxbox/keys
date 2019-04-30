@@ -153,12 +153,12 @@ Mod4 Mod1 Right :Resize +1 0
 
 Mod4 e :Exec pcmanfm
 Mod4 f :Exec firefox -P --new-instance
+Mod4 c :Exec chromium
 Mod4 v :Exec VirtualBox
 Mod4 l :Exec slock
 Mod4 s :Exec pavucontrol
 Mod4 r :Reconfig
 Mod4 k :Exec keepassx
-Mod4 d :Exec /home/trouat/.dropbox-dist/dropboxd
 Mod4 t :Exec thunderbird -P default
 Mod4 Mod1 t :Exec thunderbird -P my_other
 Mod4 Mod1 Return :Maximize
