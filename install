@@ -1,0 +1,43 @@
+#! /bin/bash
+
+_usr_sbin="/usr/local/sbin";
+_flag="/tmp/as_user_done";
+
+function as_root {
+
+    chattr +i "$1"/.zshrc.local
+
+    cp conf/etc/* /etc/;
+    cd scripts;
+    bash mkLUKE install;
+    cp reload_ip ${_usr_sbin}/;
+    cp fw ${_usr_sbin}/;
+
+    localectl set-locale LANG=fr_FR.UTF-8;
+    localectl set-x11-keymap fr oss;
+    locale-gen;
+}
+
+function as_user {
+    cp conf/fluxbox/* ~/.fluxbox/;
+    cp scripts/zshrc.local ~/.zshrc.local
+}
+
+cd $(basename $0);
+
+case "$EUID" in
+    0)
+        if [ -f ${_flag} ];
+	    then
+                as_root $(cat ${_flag});
+                echo "Done!";
+             else
+                echo "Run me as user first";
+             fi
+	;;
+    *)
+        as_user;
+	echo $HOME > ${_flag};
+	echo "Now, run me as root!";
+	;;
+esac
