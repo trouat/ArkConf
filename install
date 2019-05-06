@@ -21,6 +21,7 @@ function as_root {
 function as_user {
     cp conf/fluxbox/* ~/.fluxbox/;
     cp scripts/zshrc.local ~/.zshrc.local
+    cp conf/vimrc ~/.vimrc
 }
 
 cd $(basename $0);

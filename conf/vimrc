@@ -1,0 +1,13 @@
+syn on
+set hlsearch
+set mouse=a
+filetype plugin indent on
+set tabstop=4
+set shiftwidth=4
+set expandtab
+set autoindent
+set cindent
+set wildmenu
+map <F4> :e %,.h$,.X123X,,.cpp$,.h,,.X123X$,.cpp,<CR>
+au BufRead,BufNewFile *.md set filetype=markdown
+highlight LineNr term=bold cterm=NONE ctermfg=DarkGrey ctermbg=NONE gui=NONE guifg=DarkGrey guibg=NONE
