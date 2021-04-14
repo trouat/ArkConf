@@ -5,6 +5,40 @@
 
 # Lines starting with a '#' are ignored.
 
+_Screen="${HOME}/.screenlayout"
+
+function select_screen {
+
+	case "$1" in 
+		"HDMI-2")
+			cat ${_Screen}/External_Screen_Master_4.sh;
+			;;
+		"DVI-I-1-1")
+			cat ${_Screen}/External_Screen_Master_3.sh;
+			;;
+		*)
+			echo -n "Unknown"
+			;;
+	esac
+
+}
+
+function split_screen {
+
+	__size=$(echo "$3" | awk -F+ '{print $1}')
+	__xrandr=$(select_screen "$1" | grep xrandr | sed "s/_SIZE_/$__size/")
+	
+	eval "$__xrandr";
+
+}
+
+function d_screen {
+
+	split_screen $(xrandr | grep " connected" | tail -n1);	
+
+}
+
+
 function delay {
     sleep $2;
     eval "$1" &
@@ -24,19 +58,40 @@ function vbox {
     done;
 }
 
+function after_start {
+	d_screen;
+	feh --bg-fill ~/.wallpaper/568837_1600_900.jpg &
+	compton &
+	cbatticon &
+}
+
+
+
 # Change your keymap:
-xmodmap "~/.Xmodmap"
-setxkbmap fr oss;
-xrdb -merge ~/.Xresources
+#xmodmap "/home/trouat/.Xmodmap"
+setxkbmap fr oss &
+xrdb -merge ~/.Xresources &
+/usr/bin/numlockx &
 
-## composite
+
+# turn off Display Power Management Service (DPMS)
+xset -dpms
+setterm -blank 0 -powerdown 0
+
+# turn off black Screensaver
+xset s off
+
+# composite
 #delay "xcompmgr -c -C -t-5 -l-5 -r4.2 -o.55" 5 &
-#delay "compton -c -r4 -l-6 -t-4 -z -b -G -C -e0.85 -f -D30 -I0.45 -O0.45 --paint-on-overlay --unredir-if-possible --backend glx --glx-no-stencil --glx-no-rebind-pixmap" 5 &
 
-## témoin de charge
-#delay "cbatticon" 6 &
+#delay "compton -c -r4 -l-6 -t-4 -z -b -G -C -e0.85 -f -D30 -I0.45 -O0.45 --paint-on-overlay --unredir-if-possible --backend glx --glx-no-stencil --glx-no-rebind-pixmap" 5 &
+# témoin de charge
 
 #delay rdombg 6 &
+
+delay vbox 2 &
+delay after_start 0.3 &
+
 
 # Applications you want to run with fluxbox.
 # MAKE SURE THAT APPS THAT KEEP RUNNING HAVE AN ''&'' AT THE END.
