@@ -24,7 +24,7 @@ function as_user {
     cp conf/vimrc ~/.vimrc
 }
 
-cd $(basename $0);
+cd $(dirname $0);
 
 case "$EUID" in
     0)
