@@ -1,0 +1,7 @@
+[user]
+    name = LG5841
+    email = thibault.rouat@engie.com
+
+[credential]
+    helper=store --file ~/.git-credentials
+

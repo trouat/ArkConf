@@ -1,0 +1,5 @@
+[includeIf "gitdir:~/Documents/git/pub/"]
+  path = .gitconfig-public
+
+[includeIf "gitdir:~/Documents/git/work/"] 
+  path = .gitconfig-work 
